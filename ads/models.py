@@ -14,8 +14,8 @@ class Category(models.Model):
         return self.name
 
 
-class Ads(models.Model):
-    name = models.CharField(max_length=50)
+class Ad(models.Model):
+    name = models.CharField(max_length=20)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     price = models.PositiveIntegerField()
     description = models.TextField(max_length=1000, null=True)

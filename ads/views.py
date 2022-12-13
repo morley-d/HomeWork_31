@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 
-from ads.models import Category, Ads
+from ads.models import Category, Ad
 from users.models import User
 
 
@@ -24,6 +24,7 @@ class CategoryView(ListView):
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
+
         self.object_list = self.object_list.order_by("name")
 
         response = []
@@ -33,7 +34,7 @@ class CategoryView(ListView):
                 "name": category.name,
             })
 
-        return JsonResponse(response, safe=False, json_dumps_params={"ensure_ascii": False})
+        return JsonResponse(response, safe=False)
 
 
 class CategoryDetailView(DetailView):
@@ -45,12 +46,11 @@ class CategoryDetailView(DetailView):
         except Http404:
             return JsonResponse({"error": "Category not found"}, status=404)
 
+
         return JsonResponse({
             "id": category.id,
             "name": category.name,
-        },
-            json_dumps_params={"ensure_ascii": False}
-        )
+        })
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -107,15 +107,31 @@ class CategoryDeleteView(DeleteView):
 
 
 class AdView(ListView):
-    models = Ads
-    queryset = Ads.objects.all()
+    models = Ad
+    queryset = Ad.objects.all()
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
 
+        categories = request.GET.getlist("cat", [])
+        if categories:
+            self.object_list = self.object_list.filter(category_id__in=categories)
+
+        if request.GET.get("text", None):
+            self.object_list = self.object_list.filter(name__icontains=request.GET.get("text"))
+
+        if request.GET.get("location", None):
+            self.object_list = self.object_list.filter(author__locations__name__icontains=request.GET.get("location"))
+
+        if request.GET.get("price_from", None):
+            self.object_list = self.object_list.filter(price__gte=request.GET.get("price_from"))
+
+        if request.GET.get("price_to", None):
+            self.object_list = self.object_list.filter(price__lte=request.GET.get("price_to"))
+
         self.object_list = self.object_list.select_related('author').order_by("-price")
         paginator = Paginator(self.object_list, settings.TOTAL_ON_PAGE)
-        page_number = request.GET.get('page', 1)
+        page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
         ads = []
@@ -134,7 +150,6 @@ class AdView(ListView):
 
         response = {
             "items": ads,
-            "current page": page_number,
             "num_pages": page_obj.paginator.num_pages,
             "total": page_obj.paginator.count,
         }
@@ -143,7 +158,7 @@ class AdView(ListView):
 
 
 class AdDetailView(DetailView):
-    model = Ads
+    model = Ad
 
     def get(self, request, *args, **kwargs):
         try:
@@ -166,7 +181,7 @@ class AdDetailView(DetailView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdCreateView(CreateView):
-    model = Ads
+    model = Ad
     fields = ["name", "author", "price", "description", "is_published", "category"]
 
     def post(self, request, *args, **kwargs):
@@ -175,7 +190,7 @@ class AdCreateView(CreateView):
         author = get_object_or_404(User, pk=ad_data["author_id"])
         category = get_object_or_404(Category, pk=ad_data["category_id"])
 
-        ad = Ads.objects.create(
+        ad = Ad.objects.create(
             name=ad_data["name"],
             author=author,
             price=ad_data["price"],
@@ -199,7 +214,7 @@ class AdCreateView(CreateView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdUpdateView(UpdateView):
-    model = Ads
+    model = Ad
     fields = ["name", "author", "price", "description", "category"]
 
     def patch(self, request, *args, **kwargs):
@@ -237,11 +252,14 @@ class AdUpdateView(UpdateView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdUploadImageView(UpdateView):
-    model = Ads
+    model = Ad
     fields = ["image"]
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
+        try:
+            self.object = self.get_object()
+        except Http404:
+            return JsonResponse({"error": "Ads not found"}, status=404)
 
         self.object.image = request.FILES.get("image", None)
         self.object.save()
@@ -259,10 +277,9 @@ class AdUploadImageView(UpdateView):
         })
 
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class AdDeleteView(DeleteView):
-    model = Ads
+    model = Ad
     success_url = "/"
 
     def delete(self, request, *args, **kwargs):
@@ -272,4 +289,3 @@ class AdDeleteView(DeleteView):
             return JsonResponse({"error": "Ads not found"}, status=404)
 
         return JsonResponse({"status": "ok"}, status=200)
-

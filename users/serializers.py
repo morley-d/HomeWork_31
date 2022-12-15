@@ -5,8 +5,9 @@ from users.models import User, Location
 
 class CheckRamblerEmail:
     def __call__(self, value):
-        if not value.endswith("rambler.ru"):
-            raise serializers.ValidationError("Only rambler users can register")
+        if value.endswith("rambler.ru"):
+            raise serializers.ValidationError("Registration from the mail domain rambler.ru is prohibited")
+
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:

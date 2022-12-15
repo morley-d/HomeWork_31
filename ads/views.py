@@ -190,25 +190,6 @@ class AdView(ListView):
 
 
 class AdDetailView(RetrieveAPIView):
-    # model = Ad
-    #
-    # def get(self, request, *args, **kwargs):
-    #     try:
-    #         ad = self.get_object()
-    #     except Http404:
-    #         return JsonResponse({"error": "Ads not found"}, status=404)
-    #
-    #     return JsonResponse({
-    #         "id": ad.id,
-    #         "name": ad.name,
-    #         "author_id": ad.author_id,
-    #         "author": ad.author.first_name,
-    #         "price": ad.price,
-    #         "description": ad.description,
-    #         "is_published": ad.is_published,
-    #         "category_id": ad.category_id,
-    #         "image": ad.image.url if ad.image else None,
-    #     })
     queryset = Ad.objects.all()
     serializer_class = AdDetailSerializer
     permission_classes = [IsAuthenticated]
@@ -244,45 +225,13 @@ class AdCreateView(CreateView):
             "is_published": ad.is_published,
             "category_id": ad.category_id,
             "image": ad.image.url if ad.image else None,
-        })
+        },
+            status=201
+        )
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdUpdateView(UpdateAPIView):
-    # model = Ad
-    # fields = ["name", "author", "price", "description", "category"]
-    #
-    # def patch(self, request, *args, **kwargs):
-    #     try:
-    #         super().post(request, *args, **kwargs)
-    #     except Http404:
-    #         return JsonResponse({"error": "Ads not found"}, status=404)
-    #
-    #     ad_data = json.loads(request.body)
-    #     if ad_data.get("name"):
-    #         self.object.name = ad_data["name"]
-    #     if ad_data.get("price"):
-    #         self.object.price = ad_data["price"]
-    #     if ad_data.get("description"):
-    #         self.object.description = ad_data["description"]
-    #
-    #     if ad_data.get("author_id"):
-    #         self.object.author = get_object_or_404(User, pk=ad_data["author_id"])
-    #     if ad_data.get("category_id"):
-    #         self.object.category = get_object_or_404(Category, pk=ad_data["category_id"])
-    #
-    #     self.object.save()
-    #     return JsonResponse({
-    #         "id": self.object.id,
-    #         "name": self.object.name,
-    #         "author_id": self.object.author_id,
-    #         "author": self.object.author.first_name,
-    #         "price": self.object.price,
-    #         "description": self.object.description,
-    #         "is_published": self.object.is_published,
-    #         "category_id": self.object.category_id,
-    #         "image": self.object.image.url if self.object.image else None,
-    #     })
     queryset = Ad.objects.all()
     serializer_class = AdDetailSerializer
     permission_classes = [IsAuthenticated, AdUpdatePermission]
@@ -317,16 +266,6 @@ class AdUploadImageView(UpdateView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class AdDeleteView(DestroyAPIView):
-    # model = Ad
-    # success_url = "/"
-    #
-    # def delete(self, request, *args, **kwargs):
-    #     try:
-    #         super().delete(request, *args, **kwargs)
-    #     except Http404:
-    #         return JsonResponse({"error": "Ads not found"}, status=404)
-    #
-    #     return JsonResponse({"status": "ok"}, status=200)
     queryset = Ad.objects.all()
     serializer_class = AdSerializer
     permission_classes = [IsAuthenticated, AdUpdatePermission]

@@ -3,6 +3,12 @@ from rest_framework import serializers
 from ads.models import Ad, Selection
 
 
+class NotTrueValidator:
+    def __call__(self, value):
+        if value:
+            raise serializers.ValidationError("New ad can not be published")
+
+
 class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
